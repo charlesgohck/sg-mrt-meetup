@@ -1,0 +1,1126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MRT Meetup Finder</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:ital,wght@0,300;0,700;1,300&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  :root {
+    --bg: #0d0f14;
+    --surface: #151820;
+    --border: #252a35;
+    --accent: #e8ff6b;
+    --accent2: #6bffd4;
+    --accent3: #ff6b9d;
+    --text: #e8eaf0;
+    --muted: #5a6070;
+    --card: #1a1e28;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Subtle grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(232,255,107,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(232,255,107,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  header {
+    margin-bottom: 2.5rem;
+  }
+
+  .eyebrow {
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+  }
+
+  h1 {
+    font-family: 'Fraunces', serif;
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--text);
+  }
+
+  h1 em {
+    font-style: italic;
+    color: var(--accent);
+  }
+
+  .subtitle {
+    margin-top: 0.75rem;
+    font-size: 0.78rem;
+    color: var(--muted);
+    max-width: 480px;
+    line-height: 1.7;
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    gap: 1.5rem;
+    align-items: start;
+  }
+
+  @media (max-width: 780px) {
+    .layout { grid-template-columns: 1fr; }
+  }
+
+  .panel {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+  }
+
+  .panel-title {
+    font-size: 0.6rem;
+    letter-spacing: 0.18em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 1.2rem;
+  }
+
+  .friends-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 1.2rem;
+  }
+
+  .friend-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  .friend-badge {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    font-weight: 500;
+    flex-shrink: 0;
+    border: 1.5px solid;
+  }
+
+  .friend-input-wrap {
+    position: relative;
+    flex: 1;
+  }
+
+  .friend-input {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 0.55rem 0.8rem;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.78rem;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .friend-input:focus {
+    border-color: var(--accent);
+  }
+
+  .friend-input::placeholder { color: var(--muted); }
+
+  .autocomplete-list {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0; right: 0;
+    background: #1e2330;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    z-index: 1000;
+    max-height: 180px;
+    overflow-y: auto;
+    display: none;
+  }
+
+  .autocomplete-list.open { display: block; }
+
+  .autocomplete-item {
+    padding: 0.5rem 0.8rem;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .autocomplete-item:hover, .autocomplete-item.selected {
+    background: rgba(232,255,107,0.1);
+    color: var(--accent);
+  }
+
+  .btn {
+    width: 100%;
+    padding: 0.75rem;
+    background: var(--accent);
+    color: #0d0f14;
+    border: none;
+    border-radius: 8px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    letter-spacing: 0.08em;
+    transition: opacity 0.2s, transform 0.1s;
+    margin-top: 0.5rem;
+  }
+
+  .btn:hover { opacity: 0.88; }
+  .btn:active { transform: scale(0.98); }
+  .btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  .right-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+  }
+
+  #map {
+    width: 100%;
+    height: 420px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+  }
+
+  .result-panel {
+    display: none;
+  }
+
+  .result-panel.visible { display: block; }
+
+  .result-header {
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+    margin-bottom: 1.2rem;
+    flex-wrap: wrap;
+  }
+
+  .result-station {
+    font-family: 'Fraunces', serif;
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--accent);
+    line-height: 1;
+  }
+
+  .result-meta {
+    font-size: 0.68rem;
+    color: var(--muted);
+  }
+
+  .breakdown-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 0.75rem;
+  }
+
+  .breakdown-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.8rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .breakdown-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+
+  .breakdown-friend {
+    font-size: 0.62rem;
+    color: var(--muted);
+    margin-bottom: 0.25rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .breakdown-from {
+    font-size: 0.75rem;
+    color: var(--text);
+    margin-bottom: 0.5rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .breakdown-stops {
+    font-family: 'Fraunces', serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .breakdown-label {
+    font-size: 0.6rem;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  .bar-wrap {
+    margin-top: 0.6rem;
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.6s ease;
+  }
+
+  .score-row {
+    display: flex;
+    gap: 1.5rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+
+  .score-item { }
+  .score-label { font-size: 0.6rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; }
+  .score-value { font-family: 'Fraunces', serif; font-size: 1.2rem; color: var(--accent2); }
+
+  .remove-btn {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: border-color 0.2s, color 0.2s;
+    line-height: 1;
+    padding: 0;
+  }
+  .remove-btn:hover { border-color: var(--accent3); color: var(--accent3); }
+
+  .btn-secondary {
+    width: 100%;
+    padding: 0.6rem;
+    background: transparent;
+    color: var(--muted);
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.78rem;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+    transition: border-color 0.2s, color 0.2s;
+    margin-bottom: 0.75rem;
+  }
+  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-secondary:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  .error-msg {
+    font-size: 0.75rem;
+    color: var(--accent3);
+    margin-top: 0.5rem;
+    min-height: 1rem;
+  }
+
+  .loading {
+    font-size: 0.75rem;
+    color: var(--muted);
+    text-align: center;
+    padding: 2rem;
+    display: none;
+  }
+
+  /* Leaflet custom markers */
+  .friend-marker {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 2.5px solid;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-family: 'DM Mono', monospace;
+    font-weight: 500;
+  }
+
+  .meet-marker {
+    width: 36px;
+    height: 36px;
+    background: var(--accent);
+    border-radius: 50%;
+    border: 3px solid #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="eyebrow">Singapore MRT</div>
+    <h1>Find the <em>fairest</em><br>meetup station.</h1>
+    <p class="subtitle">Enter each friend's MRT station. We'll find the stop where no one travels more than necessary — minimizing the longest journey.</p>
+  </header>
+
+  <div class="layout">
+    <!-- Left: Input Panel -->
+    <div class="panel">
+      <div class="panel-title">Friends' Stations</div>
+      <div class="friends-list" id="friendsList"></div>
+      <button class="btn-secondary" id="addFriendBtn" onclick="addFriendRow()">+ Add Friend</button>
+      <div class="error-msg" id="errorMsg"></div>
+      <button class="btn" id="findBtn" onclick="findMeetup()">Find Meetup Station →</button>
+    </div>
+
+    <!-- Right: Map + Results -->
+    <div class="right-panel">
+      <div id="map"></div>
+      <div class="loading" id="loading">Computing shortest paths…</div>
+      <div class="panel result-panel" id="resultPanel">
+        <div class="panel-title">Recommended Meetup</div>
+        <div class="result-header">
+          <div class="result-station" id="resultStation">—</div>
+          <div class="result-meta" id="resultMeta"></div>
+        </div>
+        <div class="breakdown-grid" id="breakdownGrid"></div>
+        <div class="score-row" id="scoreRow"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── PALETTE ─────────────────────────────────────────────────────────────
+const FRIEND_COLORS = [
+  { bg: '#e8ff6b', border: '#c8df3b', text: '#0d0f14' },
+  { bg: '#6bffd4', border: '#3bcfaa', text: '#0d0f14' },
+  { bg: '#ff6b9d', border: '#df3b7d', text: '#fff' },
+  { bg: '#a78bfa', border: '#7c5cf0', text: '#fff' },
+  { bg: '#fb923c', border: '#d96020', text: '#fff' },
+];
+
+// ─── MRT GRAPH DATA ──────────────────────────────────────────────────────
+// Each station: { name, lat, lng, lines[] }
+// Edges represent direct connections (1 stop apart)
+const STATIONS = {
+  // NORTH-SOUTH LINE (NS)
+  "Jurong East": { lat: 1.3331, lng: 103.7422, lines: ["NS","EW"] },
+  "Bukit Batok": { lat: 1.3489, lng: 103.7496, lines: ["NS"] },
+  "Bukit Gombak": { lat: 1.3587, lng: 103.7519, lines: ["NS"] },
+  "Choa Chu Kang": { lat: 1.3853, lng: 103.7448, lines: ["NS","BP"] },
+  "Yew Tee": { lat: 1.3971, lng: 103.7477, lines: ["NS"] },
+  "Kranji": { lat: 1.4253, lng: 103.7622, lines: ["NS"] },
+  "Marsiling": { lat: 1.4326, lng: 103.7742, lines: ["NS"] },
+  "Woodlands": { lat: 1.4368, lng: 103.7863, lines: ["NS","TE"] },
+  "Admiralty": { lat: 1.4408, lng: 103.8006, lines: ["NS"] },
+  "Sembawang": { lat: 1.4491, lng: 103.8199, lines: ["NS"] },
+  "Canberra": { lat: 1.4432, lng: 103.8297, lines: ["NS"] },
+  "Yishun": { lat: 1.4295, lng: 103.8353, lines: ["NS"] },
+  "Khatib": { lat: 1.4175, lng: 103.8330, lines: ["NS"] },
+  "Yio Chu Kang": { lat: 1.3817, lng: 103.8448, lines: ["NS"] },
+  "Ang Mo Kio": { lat: 1.3700, lng: 103.8495, lines: ["NS"] },
+  "Bishan": { lat: 1.3511, lng: 103.8481, lines: ["NS","CC"] },
+  "Braddell": { lat: 1.3404, lng: 103.8470, lines: ["NS"] },
+  "Toa Payoh": { lat: 1.3326, lng: 103.8474, lines: ["NS"] },
+  "Novena": { lat: 1.3203, lng: 103.8437, lines: ["NS"] },
+  "Newton": { lat: 1.3128, lng: 103.8381, lines: ["NS","DT"] },
+  "Orchard": { lat: 1.3046, lng: 103.8318, lines: ["NS","TE"] },
+  "Somerset": { lat: 1.3007, lng: 103.8389, lines: ["NS"] },
+  "Dhoby Ghaut": { lat: 1.2990, lng: 103.8456, lines: ["NS","NE","CC"] },
+  "City Hall": { lat: 1.2932, lng: 103.8520, lines: ["NS","EW"] },
+  "Raffles Place": { lat: 1.2839, lng: 103.8514, lines: ["NS","EW"] },
+  "Marina Bay": { lat: 1.2764, lng: 103.8546, lines: ["NS","CE","TE"] },
+  "Marina South Pier": { lat: 1.2706, lng: 103.8635, lines: ["NS"] },
+
+  // EAST-WEST LINE (EW)
+  "Pasir Ris": { lat: 1.3728, lng: 103.9494, lines: ["EW"] },
+  "Tampines": { lat: 1.3527, lng: 103.9452, lines: ["EW","DT"] },
+  "Simei": { lat: 1.3432, lng: 103.9530, lines: ["EW"] },
+  "Tanah Merah": { lat: 1.3273, lng: 103.9462, lines: ["EW","CG"] },
+  "Bedok": { lat: 1.3240, lng: 103.9300, lines: ["EW"] },
+  "Kembangan": { lat: 1.3212, lng: 103.9122, lines: ["EW"] },
+  "Eunos": { lat: 1.3196, lng: 103.9027, lines: ["EW"] },
+  "Paya Lebar": { lat: 1.3179, lng: 103.8920, lines: ["EW","CC"] },
+  "Aljunied": { lat: 1.3163, lng: 103.8829, lines: ["EW"] },
+  "Kallang": { lat: 1.3113, lng: 103.8713, lines: ["EW"] },
+  "Lavender": { lat: 1.3073, lng: 103.8631, lines: ["EW"] },
+  "Bugis": { lat: 1.3009, lng: 103.8565, lines: ["EW","DT"] },
+  "Tanjong Pagar": { lat: 1.2765, lng: 103.8458, lines: ["EW"] },
+  "Outram Park": { lat: 1.2801, lng: 103.8394, lines: ["EW","NE","TE"] },
+  "Tiong Bahru": { lat: 1.2863, lng: 103.8272, lines: ["EW"] },
+  "Redhill": { lat: 1.2898, lng: 103.8166, lines: ["EW"] },
+  "Queenstown": { lat: 1.2946, lng: 103.8059, lines: ["EW"] },
+  "Commonwealth": { lat: 1.3026, lng: 103.7984, lines: ["EW"] },
+  "Buona Vista": { lat: 1.3070, lng: 103.7898, lines: ["EW","CC"] },
+  "Dover": { lat: 1.3113, lng: 103.7786, lines: ["EW"] },
+  "Clementi": { lat: 1.3152, lng: 103.7651, lines: ["EW"] },
+  "Chinese Garden": { lat: 1.3424, lng: 103.7323, lines: ["EW"] },
+  "Lakeside": { lat: 1.3440, lng: 103.7211, lines: ["EW"] },
+  "Boon Lay": { lat: 1.3388, lng: 103.7063, lines: ["EW"] },
+  "Pioneer": { lat: 1.3368, lng: 103.6969, lines: ["EW"] },
+  "Joo Koon": { lat: 1.3277, lng: 103.6786, lines: ["EW"] },
+  "Gul Circle": { lat: 1.3193, lng: 103.6605, lines: ["EW"] },
+  "Tuas Crescent": { lat: 1.3212, lng: 103.6488, lines: ["EW"] },
+  "Tuas West Road": { lat: 1.3298, lng: 103.6397, lines: ["EW"] },
+  "Tuas Link": { lat: 1.3399, lng: 103.6367, lines: ["EW"] },
+
+  // CIRCLE LINE (CC)
+  "Dhoby Ghaut": { lat: 1.2990, lng: 103.8456, lines: ["NS","NE","CC"] },
+  "Bras Basah": { lat: 1.2967, lng: 103.8508, lines: ["CC"] },
+  "Esplanade": { lat: 1.2937, lng: 103.8555, lines: ["CC"] },
+  "Promenade": { lat: 1.2934, lng: 103.8617, lines: ["CC","DT"] },
+  "Nicoll Highway": { lat: 1.2999, lng: 103.8636, lines: ["CC"] },
+  "Stadium": { lat: 1.3066, lng: 103.8748, lines: ["CC"] },
+  "Mountbatten": { lat: 1.3064, lng: 103.8826, lines: ["CC"] },
+  "Dakota": { lat: 1.3081, lng: 103.8884, lines: ["CC"] },
+  "Paya Lebar": { lat: 1.3179, lng: 103.8920, lines: ["EW","CC"] },
+  "MacPherson": { lat: 1.3267, lng: 103.8896, lines: ["CC","DT"] },
+  "Tai Seng": { lat: 1.3356, lng: 103.8879, lines: ["CC"] },
+  "Bartley": { lat: 1.3425, lng: 103.8798, lines: ["CC"] },
+  "Serangoon": { lat: 1.3498, lng: 103.8731, lines: ["CC","NE"] },
+  "Lorong Chuan": { lat: 1.3524, lng: 103.8641, lines: ["CC"] },
+  "Bishan": { lat: 1.3511, lng: 103.8481, lines: ["NS","CC"] },
+  "Marymount": { lat: 1.3491, lng: 103.8396, lines: ["CC"] },
+  "Caldecott": { lat: 1.3373, lng: 103.8392, lines: ["CC","TE"] },
+  "Botanic Gardens": { lat: 1.3223, lng: 103.8153, lines: ["CC","DT"] },
+  "Farrer Road": { lat: 1.3175, lng: 103.8072, lines: ["CC"] },
+  "Holland Village": { lat: 1.3119, lng: 103.7966, lines: ["CC"] },
+  "Buona Vista": { lat: 1.3070, lng: 103.7898, lines: ["EW","CC"] },
+  "one-north": { lat: 1.2993, lng: 103.7873, lines: ["CC"] },
+  "Kent Ridge": { lat: 1.2942, lng: 103.7845, lines: ["CC"] },
+  "Haw Par Villa": { lat: 1.2826, lng: 103.7823, lines: ["CC"] },
+  "Pasir Panjang": { lat: 1.2761, lng: 103.7912, lines: ["CC"] },
+  "Labrador Park": { lat: 1.2725, lng: 103.8026, lines: ["CC"] },
+  "Telok Blangah": { lat: 1.2706, lng: 103.8098, lines: ["CC"] },
+  "HarbourFront": { lat: 1.2655, lng: 103.8219, lines: ["CC","NE"] },
+
+  // NORTH EAST LINE (NE)
+  "HarbourFront": { lat: 1.2655, lng: 103.8219, lines: ["CC","NE"] },
+  "Outram Park": { lat: 1.2801, lng: 103.8394, lines: ["EW","NE","TE"] },
+  "Chinatown": { lat: 1.2845, lng: 103.8444, lines: ["NE","DT"] },
+  "Clarke Quay": { lat: 1.2884, lng: 103.8468, lines: ["NE"] },
+  "Dhoby Ghaut": { lat: 1.2990, lng: 103.8456, lines: ["NS","NE","CC"] },
+  "Little India": { lat: 1.3066, lng: 103.8493, lines: ["NE","DT"] },
+  "Farrer Park": { lat: 1.3122, lng: 103.8540, lines: ["NE"] },
+  "Boon Keng": { lat: 1.3192, lng: 103.8610, lines: ["NE"] },
+  "Potong Pasir": { lat: 1.3316, lng: 103.8693, lines: ["NE"] },
+  "Woodleigh": { lat: 1.3393, lng: 103.8701, lines: ["NE"] },
+  "Serangoon": { lat: 1.3498, lng: 103.8731, lines: ["CC","NE"] },
+  "Kovan": { lat: 1.3600, lng: 103.8850, lines: ["NE"] },
+  "Hougang": { lat: 1.3716, lng: 103.8924, lines: ["NE"] },
+  "Buangkok": { lat: 1.3831, lng: 103.8932, lines: ["NE"] },
+  "Sengkang": { lat: 1.3915, lng: 103.8953, lines: ["NE"] },
+  "Punggol": { lat: 1.4053, lng: 103.9022, lines: ["NE"] },
+
+  // DOWNTOWN LINE (DT)
+  "Bukit Panjang": { lat: 1.3785, lng: 103.7762, lines: ["DT"] },
+  "Cashew": { lat: 1.3692, lng: 103.7845, lines: ["DT"] },
+  "Hillview": { lat: 1.3623, lng: 103.7672, lines: ["DT"] },
+  "Beauty World": { lat: 1.3413, lng: 103.7757, lines: ["DT"] },
+  "King Albert Park": { lat: 1.3356, lng: 103.7830, lines: ["DT"] },
+  "Sixth Avenue": { lat: 1.3310, lng: 103.7979, lines: ["DT"] },
+  "Tan Kah Kee": { lat: 1.3254, lng: 103.8074, lines: ["DT"] },
+  "Botanic Gardens": { lat: 1.3223, lng: 103.8153, lines: ["CC","DT"] },
+  "Stevens": { lat: 1.3198, lng: 103.8261, lines: ["DT","TE"] },
+  "Newton": { lat: 1.3128, lng: 103.8381, lines: ["NS","DT"] },
+  "Little India": { lat: 1.3066, lng: 103.8493, lines: ["NE","DT"] },
+  "Rochor": { lat: 1.3035, lng: 103.8524, lines: ["DT"] },
+  "Bugis": { lat: 1.3009, lng: 103.8565, lines: ["EW","DT"] },
+  "Promenade": { lat: 1.2934, lng: 103.8617, lines: ["CC","DT"] },
+  "Bayfront": { lat: 1.2822, lng: 103.8597, lines: ["DT","CE"] },
+  "Downtown": { lat: 1.2795, lng: 103.8524, lines: ["DT"] },
+  "Telok Ayer": { lat: 1.2818, lng: 103.8482, lines: ["DT"] },
+  "Chinatown": { lat: 1.2845, lng: 103.8444, lines: ["NE","DT"] },
+  "Fort Canning": { lat: 1.2919, lng: 103.8444, lines: ["DT"] },
+  "Bencoolen": { lat: 1.2982, lng: 103.8499, lines: ["DT"] },
+  "Jalan Besar": { lat: 1.3051, lng: 103.8566, lines: ["DT"] },
+  "Bendemeer": { lat: 1.3137, lng: 103.8627, lines: ["DT"] },
+  "Geylang Bahru": { lat: 1.3219, lng: 103.8717, lines: ["DT"] },
+  "Mattar": { lat: 1.3258, lng: 103.8827, lines: ["DT"] },
+  "MacPherson": { lat: 1.3267, lng: 103.8896, lines: ["CC","DT"] },
+  "Ubi": { lat: 1.3295, lng: 103.8992, lines: ["DT"] },
+  "Kaki Bukit": { lat: 1.3343, lng: 103.9082, lines: ["DT"] },
+  "Bedok North": { lat: 1.3340, lng: 103.9192, lines: ["DT"] },
+  "Bedok Reservoir": { lat: 1.3360, lng: 103.9320, lines: ["DT"] },
+  "Tampines West": { lat: 1.3456, lng: 103.9380, lines: ["DT"] },
+  "Tampines": { lat: 1.3527, lng: 103.9452, lines: ["EW","DT"] },
+  "Tampines East": { lat: 1.3572, lng: 103.9527, lines: ["DT"] },
+  "Upper Changi": { lat: 1.3412, lng: 103.9612, lines: ["DT"] },
+  "Expo": { lat: 1.3354, lng: 103.9611, lines: ["DT","CG"] },
+
+  // THOMSON-EAST COAST LINE (TE) - selected key stations
+  "Woodlands North": { lat: 1.4479, lng: 103.7863, lines: ["TE"] },
+  "Woodlands South": { lat: 1.4234, lng: 103.7863, lines: ["TE"] },
+  "Springleaf": { lat: 1.3991, lng: 103.8209, lines: ["TE"] },
+  "Lentor": { lat: 1.3853, lng: 103.8364, lines: ["TE"] },
+  "Mayflower": { lat: 1.3714, lng: 103.8374, lines: ["TE"] },
+  "Bright Hill": { lat: 1.3613, lng: 103.8352, lines: ["TE"] },
+  "Upper Thomson": { lat: 1.3511, lng: 103.8309, lines: ["TE"] },
+  "Caldecott": { lat: 1.3373, lng: 103.8392, lines: ["CC","TE"] },
+  "Mount Pleasant": { lat: 1.3268, lng: 103.8357, lines: ["TE"] },
+  "Stevens": { lat: 1.3198, lng: 103.8261, lines: ["DT","TE"] },
+  "Napier": { lat: 1.3058, lng: 103.8222, lines: ["TE"] },
+  "Orchard Boulevard": { lat: 1.3026, lng: 103.8268, lines: ["TE"] },
+  "Orchard": { lat: 1.3046, lng: 103.8318, lines: ["NS","TE"] },
+  "Great World": { lat: 1.2944, lng: 103.8318, lines: ["TE"] },
+  "Havelock": { lat: 1.2884, lng: 103.8357, lines: ["TE"] },
+  "Outram Park": { lat: 1.2801, lng: 103.8394, lines: ["EW","NE","TE"] },
+  "Maxwell": { lat: 1.2797, lng: 103.8444, lines: ["TE"] },
+  "Shenton Way": { lat: 1.2774, lng: 103.8507, lines: ["TE"] },
+  "Marina Bay": { lat: 1.2764, lng: 103.8546, lines: ["NS","CE","TE"] },
+  "Gardens by the Bay": { lat: 1.2818, lng: 103.8637, lines: ["TE"] },
+  "Tanjong Rhu": { lat: 1.2948, lng: 103.8711, lines: ["TE"] },
+  "Katong Park": { lat: 1.2994, lng: 103.8843, lines: ["TE"] },
+  "Tanjong Katong": { lat: 1.3007, lng: 103.8958, lines: ["TE"] },
+  "Marine Parade": { lat: 1.3023, lng: 103.9058, lines: ["TE"] },
+  "Marine Terrace": { lat: 1.3046, lng: 103.9138, lines: ["TE"] },
+  "Siglap": { lat: 1.3106, lng: 103.9272, lines: ["TE"] },
+  "Bayshore": { lat: 1.3146, lng: 103.9410, lines: ["TE"] },
+  "Bedok South": { lat: 1.3202, lng: 103.9473, lines: ["TE"] },
+  "Sungei Bedok": { lat: 1.3278, lng: 103.9577, lines: ["TE"] },
+};
+
+// Build adjacency list for BFS
+const EDGES = {
+  // NS Line
+  "Jurong East": ["Bukit Batok","Clementi"],
+  "Bukit Batok": ["Jurong East","Bukit Gombak"],
+  "Bukit Gombak": ["Bukit Batok","Choa Chu Kang"],
+  "Choa Chu Kang": ["Bukit Gombak","Yew Tee"],
+  "Yew Tee": ["Choa Chu Kang","Kranji"],
+  "Kranji": ["Yew Tee","Marsiling"],
+  "Marsiling": ["Kranji","Woodlands"],
+  "Woodlands": ["Marsiling","Admiralty","Woodlands North","Woodlands South"],
+  "Admiralty": ["Woodlands","Sembawang"],
+  "Sembawang": ["Admiralty","Canberra"],
+  "Canberra": ["Sembawang","Yishun"],
+  "Yishun": ["Canberra","Khatib"],
+  "Khatib": ["Yishun","Yio Chu Kang"],
+  "Yio Chu Kang": ["Khatib","Ang Mo Kio"],
+  "Ang Mo Kio": ["Yio Chu Kang","Bishan"],
+  "Bishan": ["Ang Mo Kio","Braddell","Marymount","Lorong Chuan"],
+  "Braddell": ["Bishan","Toa Payoh"],
+  "Toa Payoh": ["Braddell","Novena"],
+  "Novena": ["Toa Payoh","Newton"],
+  "Newton": ["Novena","Orchard","Stevens"],
+  "Orchard": ["Newton","Somerset","Orchard Boulevard","Napier"],
+  "Somerset": ["Orchard","Dhoby Ghaut"],
+  "Dhoby Ghaut": ["Somerset","City Hall","Clarke Quay","Bras Basah","Bencoolen"],
+  "City Hall": ["Dhoby Ghaut","Raffles Place","Bugis","Esplanade"],
+  "Raffles Place": ["City Hall","Marina Bay","Tanjong Pagar"],
+  "Marina Bay": ["Raffles Place","Marina South Pier","Bayfront","Shenton Way"],
+  "Marina South Pier": ["Marina Bay"],
+
+  // EW Line
+  "Pasir Ris": ["Tampines"],
+  "Tampines": ["Pasir Ris","Simei","Tampines West","Tampines East"],
+  "Simei": ["Tampines","Tanah Merah"],
+  "Tanah Merah": ["Simei","Bedok","Expo"],
+  "Bedok": ["Tanah Merah","Kembangan"],
+  "Kembangan": ["Bedok","Eunos"],
+  "Eunos": ["Kembangan","Paya Lebar"],
+  "Paya Lebar": ["Eunos","Aljunied","Dakota","MacPherson"],
+  "Aljunied": ["Paya Lebar","Kallang"],
+  "Kallang": ["Aljunied","Lavender"],
+  "Lavender": ["Kallang","Bugis"],
+  "Bugis": ["Lavender","City Hall","Rochor","Promenade"],
+  "Tanjong Pagar": ["Raffles Place","Outram Park"],
+  "Outram Park": ["Tanjong Pagar","Tiong Bahru","Chinatown","Clarke Quay","Havelock","Maxwell"],
+  "Tiong Bahru": ["Outram Park","Redhill"],
+  "Redhill": ["Tiong Bahru","Queenstown"],
+  "Queenstown": ["Redhill","Commonwealth"],
+  "Commonwealth": ["Queenstown","Buona Vista"],
+  "Buona Vista": ["Commonwealth","Dover","one-north","Holland Village"],
+  "Dover": ["Buona Vista","Clementi"],
+  "Clementi": ["Dover","Jurong East"],
+  "Chinese Garden": ["Lakeside","Jurong East"],
+  "Lakeside": ["Chinese Garden","Boon Lay"],
+  "Boon Lay": ["Lakeside","Pioneer"],
+  "Pioneer": ["Boon Lay","Joo Koon"],
+  "Joo Koon": ["Pioneer","Gul Circle"],
+  "Gul Circle": ["Joo Koon","Tuas Crescent"],
+  "Tuas Crescent": ["Gul Circle","Tuas West Road"],
+  "Tuas West Road": ["Tuas Crescent","Tuas Link"],
+  "Tuas Link": ["Tuas West Road"],
+
+  // CC Line
+  "Bras Basah": ["Dhoby Ghaut","Esplanade"],
+  "Esplanade": ["Bras Basah","City Hall","Promenade"],
+  "Promenade": ["Esplanade","Nicoll Highway","Bugis","Bayfront"],
+  "Nicoll Highway": ["Promenade","Stadium"],
+  "Stadium": ["Nicoll Highway","Mountbatten"],
+  "Mountbatten": ["Stadium","Dakota"],
+  "Dakota": ["Mountbatten","Paya Lebar"],
+  "MacPherson": ["Paya Lebar","Tai Seng","Mattar","Ubi"],
+  "Tai Seng": ["MacPherson","Bartley"],
+  "Bartley": ["Tai Seng","Serangoon"],
+  "Serangoon": ["Bartley","Lorong Chuan","Woodleigh","Kovan"],
+  "Lorong Chuan": ["Serangoon","Bishan"],
+  "Marymount": ["Bishan","Caldecott"],
+  "Caldecott": ["Marymount","Botanic Gardens","Upper Thomson"],
+  "Botanic Gardens": ["Caldecott","Farrer Road","Tan Kah Kee"],
+  "Farrer Road": ["Botanic Gardens","Holland Village"],
+  "Holland Village": ["Farrer Road","Buona Vista"],
+  "one-north": ["Buona Vista","Kent Ridge"],
+  "Kent Ridge": ["one-north","Haw Par Villa"],
+  "Haw Par Villa": ["Kent Ridge","Pasir Panjang"],
+  "Pasir Panjang": ["Haw Par Villa","Labrador Park"],
+  "Labrador Park": ["Pasir Panjang","Telok Blangah"],
+  "Telok Blangah": ["Labrador Park","HarbourFront"],
+  "HarbourFront": ["Telok Blangah","Outram Park"],
+
+  // NE Line
+  "Chinatown": ["Outram Park","Clarke Quay","Telok Ayer","Fort Canning"],
+  "Clarke Quay": ["Chinatown","Dhoby Ghaut"],
+  "Little India": ["Dhoby Ghaut","Farrer Park","Rochor","Jalan Besar"],
+  "Farrer Park": ["Little India","Boon Keng"],
+  "Boon Keng": ["Farrer Park","Potong Pasir"],
+  "Potong Pasir": ["Boon Keng","Woodleigh"],
+  "Woodleigh": ["Potong Pasir","Serangoon"],
+  "Kovan": ["Serangoon","Hougang"],
+  "Hougang": ["Kovan","Buangkok"],
+  "Buangkok": ["Hougang","Sengkang"],
+  "Sengkang": ["Buangkok","Punggol"],
+  "Punggol": ["Sengkang"],
+
+  // DT Line
+  "Bukit Panjang": ["Cashew"],
+  "Cashew": ["Bukit Panjang","Hillview"],
+  "Hillview": ["Cashew","Beauty World"],
+  "Beauty World": ["Hillview","King Albert Park"],
+  "King Albert Park": ["Beauty World","Sixth Avenue"],
+  "Sixth Avenue": ["King Albert Park","Tan Kah Kee"],
+  "Tan Kah Kee": ["Sixth Avenue","Botanic Gardens"],
+  "Stevens": ["Botanic Gardens","Newton","Mount Pleasant"],
+  "Rochor": ["Little India","Bugis"],
+  "Bayfront": ["Promenade","Marina Bay","Downtown"],
+  "Downtown": ["Bayfront","Telok Ayer"],
+  "Telok Ayer": ["Downtown","Chinatown"],
+  "Fort Canning": ["Chinatown","Bencoolen"],
+  "Bencoolen": ["Fort Canning","Jalan Besar"],
+  "Jalan Besar": ["Bencoolen","Bendemeer","Little India"],
+  "Bendemeer": ["Jalan Besar","Geylang Bahru"],
+  "Geylang Bahru": ["Bendemeer","Mattar"],
+  "Mattar": ["Geylang Bahru","MacPherson"],
+  "Ubi": ["MacPherson","Kaki Bukit"],
+  "Kaki Bukit": ["Ubi","Bedok North"],
+  "Bedok North": ["Kaki Bukit","Bedok Reservoir"],
+  "Bedok Reservoir": ["Bedok North","Tampines West"],
+  "Tampines West": ["Bedok Reservoir","Tampines"],
+  "Tampines East": ["Tampines","Upper Changi"],
+  "Upper Changi": ["Tampines East","Expo"],
+  "Expo": ["Upper Changi","Tanah Merah"],
+
+  // TE Line
+  "Woodlands North": ["Woodlands"],
+  "Woodlands South": ["Woodlands","Springleaf"],
+  "Springleaf": ["Woodlands South","Lentor"],
+  "Lentor": ["Springleaf","Mayflower"],
+  "Mayflower": ["Lentor","Bright Hill"],
+  "Bright Hill": ["Mayflower","Upper Thomson"],
+  "Upper Thomson": ["Bright Hill","Caldecott"],
+  "Mount Pleasant": ["Stevens","Caldecott"],
+  "Napier": ["Orchard","Orchard Boulevard"],
+  "Orchard Boulevard": ["Napier","Orchard","Great World"],
+  "Great World": ["Orchard Boulevard","Havelock"],
+  "Havelock": ["Great World","Outram Park"],
+  "Maxwell": ["Outram Park","Shenton Way"],
+  "Shenton Way": ["Maxwell","Marina Bay"],
+  "Gardens by the Bay": ["Marina Bay","Tanjong Rhu"],
+  "Tanjong Rhu": ["Gardens by the Bay","Katong Park"],
+  "Katong Park": ["Tanjong Rhu","Tanjong Katong"],
+  "Tanjong Katong": ["Katong Park","Marine Parade"],
+  "Marine Parade": ["Tanjong Katong","Marine Terrace"],
+  "Marine Terrace": ["Marine Parade","Siglap"],
+  "Siglap": ["Marine Terrace","Bayshore"],
+  "Bayshore": ["Siglap","Bedok South"],
+  "Bedok South": ["Bayshore","Sungei Bedok"],
+  "Sungei Bedok": ["Bedok South","Expo"],
+};
+
+const ALL_STATION_NAMES = Object.keys(STATIONS).sort();
+
+// ─── BFS ─────────────────────────────────────────────────────────────────
+function bfs(start) {
+  const dist = {};
+  const queue = [start];
+  dist[start] = 0;
+  while (queue.length) {
+    const curr = queue.shift();
+    const neighbors = EDGES[curr] || [];
+    for (const nb of neighbors) {
+      if (dist[nb] === undefined) {
+        dist[nb] = dist[curr] + 1;
+        queue.push(nb);
+      }
+    }
+  }
+  return dist;
+}
+
+// ─── FIND BEST MEETUP ────────────────────────────────────────────────────
+function findBestMeetup(friendStations) {
+  // Run BFS from each friend
+  const allDists = friendStations.map(s => bfs(s));
+
+  let best = null;
+  let bestScore = Infinity;
+
+  for (const candidate of ALL_STATION_NAMES) {
+    const stops = allDists.map(d => d[candidate]);
+    if (stops.some(s => s === undefined)) continue; // unreachable
+
+    const maxStops = Math.max(...stops);
+    const variance = stops.reduce((acc, s) => acc + Math.pow(s - stops.reduce((a,b)=>a+b,0)/stops.length, 2), 0) / stops.length;
+    // Primary: minimize max stops. Tiebreak: minimize variance
+    const score = maxStops * 1000 + variance;
+
+    if (score < bestScore) {
+      bestScore = score;
+      best = { station: candidate, stops, maxStops, variance };
+    }
+  }
+  return best;
+}
+
+// ─── MAP SETUP ───────────────────────────────────────────────────────────
+const map = L.map('map', { zoomControl: true }).setView([1.352, 103.82], 12);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+  attribution: '© OpenStreetMap © CARTO',
+  subdomains: 'abcd',
+  maxZoom: 19
+}).addTo(map);
+
+let markers = [];
+let polylines = [];
+
+function clearMap() {
+  markers.forEach(m => map.removeLayer(m));
+  polylines.forEach(p => map.removeLayer(p));
+  markers = []; polylines = [];
+}
+
+function addFriendMarker(station, idx, friendName) {
+  const info = STATIONS[station];
+  if (!info) return;
+  const c = FRIEND_COLORS[idx % FRIEND_COLORS.length];
+  const icon = L.divIcon({
+    className: '',
+    html: `<div style="width:28px;height:28px;border-radius:50%;background:${c.bg};border:2.5px solid ${c.border};display:flex;align-items:center;justify-content:center;font-size:11px;font-family:'DM Mono',monospace;font-weight:500;color:${c.text};box-shadow:0 2px 8px rgba(0,0,0,0.5)">${idx+1}</div>`,
+    iconSize: [28, 28], iconAnchor: [14, 14]
+  });
+  const marker = L.marker([info.lat, info.lng], { icon })
+    .addTo(map)
+    .bindPopup(`<b>Friend ${idx+1}</b><br>${station}`);
+  markers.push(marker);
+}
+
+function addMeetMarker(station) {
+  const info = STATIONS[station];
+  if (!info) return;
+  const icon = L.divIcon({
+    className: '',
+    html: `<div style="width:40px;height:40px;border-radius:50%;background:#e8ff6b;border:3px solid #fff;display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 4px 16px rgba(232,255,107,0.5)">⭐</div>`,
+    iconSize: [40, 40], iconAnchor: [20, 20]
+  });
+  const marker = L.marker([info.lat, info.lng], { icon })
+    .addTo(map)
+    .bindPopup(`<b>Meet here!</b><br>${station}`)
+    .openPopup();
+  markers.push(marker);
+}
+
+function drawLines(friendStations, meetStation) {
+  const meetInfo = STATIONS[meetStation];
+  if (!meetInfo) return;
+  friendStations.forEach((s, i) => {
+    const info = STATIONS[s];
+    if (!info) return;
+    const c = FRIEND_COLORS[i % FRIEND_COLORS.length];
+    const line = L.polyline(
+      [[info.lat, info.lng], [meetInfo.lat, meetInfo.lng]],
+      { color: c.bg, weight: 2, opacity: 0.5, dashArray: '6,6' }
+    ).addTo(map);
+    polylines.push(line);
+  });
+}
+
+// ─── AUTOCOMPLETE ────────────────────────────────────────────────────────
+let activeListIdx = -1;
+let currentList = null;
+
+function setupAutocomplete(input, listEl) {
+  input.addEventListener('input', () => {
+    const q = input.value.trim().toLowerCase();
+    listEl.innerHTML = '';
+    activeListIdx = -1;
+    if (!q) { listEl.classList.remove('open'); return; }
+    const matches = ALL_STATION_NAMES.filter(s => s.toLowerCase().includes(q)).slice(0, 8);
+    if (!matches.length) { listEl.classList.remove('open'); return; }
+    matches.forEach((s, i) => {
+      const item = document.createElement('div');
+      item.className = 'autocomplete-item';
+      item.textContent = s;
+      item.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        input.value = s;
+        listEl.classList.remove('open');
+      });
+      listEl.appendChild(item);
+    });
+    listEl.classList.add('open');
+    currentList = listEl;
+  });
+  input.addEventListener('keydown', (e) => {
+    const items = listEl.querySelectorAll('.autocomplete-item');
+    if (e.key === 'ArrowDown') {
+      activeListIdx = Math.min(activeListIdx + 1, items.length - 1);
+    } else if (e.key === 'ArrowUp') {
+      activeListIdx = Math.max(activeListIdx - 1, -1);
+    } else if (e.key === 'Enter') {
+      if (activeListIdx >= 0 && items[activeListIdx]) {
+        input.value = items[activeListIdx].textContent;
+        listEl.classList.remove('open');
+      }
+      return;
+    } else if (e.key === 'Escape') {
+      listEl.classList.remove('open');
+      return;
+    }
+    items.forEach((el, i) => el.classList.toggle('selected', i === activeListIdx));
+  });
+  input.addEventListener('blur', () => setTimeout(() => listEl.classList.remove('open'), 150));
+}
+
+// ─── BUILD FRIEND ROWS ───────────────────────────────────────────────────
+const MIN_FRIENDS = 2;
+const MAX_FRIENDS = 10;
+const friendInputs = [];
+
+function renumberRows() {
+  const rows = document.querySelectorAll('#friendsList .friend-row');
+  rows.forEach((row, i) => {
+    const c = FRIEND_COLORS[i % FRIEND_COLORS.length];
+    const badge = row.querySelector('.friend-badge');
+    badge.textContent = i + 1;
+    badge.style.background = c.bg + '22';
+    badge.style.borderColor = c.bg;
+    badge.style.color = c.bg;
+    const input = row.querySelector('.friend-input');
+    input.placeholder = `Friend ${i+1}'s MRT station…`;
+    const removeBtn = row.querySelector('.remove-btn');
+    if (removeBtn) removeBtn.style.display = friendInputs.length <= MIN_FRIENDS ? 'none' : 'flex';
+  });
+  const addBtn = document.getElementById('addFriendBtn');
+  if (addBtn) addBtn.disabled = friendInputs.length >= MAX_FRIENDS;
+}
+
+function addFriendRow() {
+  const list = document.getElementById('friendsList');
+  const i = friendInputs.length;
+  const c = FRIEND_COLORS[i % FRIEND_COLORS.length];
+
+  const row = document.createElement('div');
+  row.className = 'friend-row';
+
+  const badge = document.createElement('div');
+  badge.className = 'friend-badge';
+  badge.style.background = c.bg + '22';
+  badge.style.borderColor = c.bg;
+  badge.style.color = c.bg;
+  badge.textContent = i + 1;
+
+  const wrap = document.createElement('div');
+  wrap.className = 'friend-input-wrap';
+
+  const input = document.createElement('input');
+  input.className = 'friend-input';
+  input.type = 'text';
+  input.placeholder = `Friend ${i+1}'s MRT station…`;
+  input.autocomplete = 'off';
+
+  const dropdown = document.createElement('div');
+  dropdown.className = 'autocomplete-list';
+
+  const removeBtn = document.createElement('button');
+  removeBtn.className = 'remove-btn';
+  removeBtn.innerHTML = '×';
+  removeBtn.title = 'Remove friend';
+  removeBtn.addEventListener('click', () => {
+    const idx = friendInputs.indexOf(input);
+    if (idx !== -1) friendInputs.splice(idx, 1);
+    list.removeChild(row);
+    renumberRows();
+  });
+
+  wrap.appendChild(input);
+  wrap.appendChild(dropdown);
+  row.appendChild(badge);
+  row.appendChild(wrap);
+  row.appendChild(removeBtn);
+  list.appendChild(row);
+
+  setupAutocomplete(input, dropdown);
+  friendInputs.push(input);
+  renumberRows();
+}
+
+function buildFriendRows() {
+  for (let i = 0; i < MIN_FRIENDS; i++) addFriendRow();
+}
+
+buildFriendRows();
+
+// ─── MAIN LOGIC ──────────────────────────────────────────────────────────
+function findMeetup() {
+  const errorEl = document.getElementById('errorMsg');
+  errorEl.textContent = '';
+
+  const values = friendInputs.map(i => i.value.trim()).filter(v => v !== '');
+  if (values.length < 2) {
+    errorEl.textContent = 'Please enter at least 2 stations.';
+    return;
+  }
+  const invalid = values.filter(v => !STATIONS[v]);
+  if (invalid.length) {
+    errorEl.textContent = `Unknown station(s): ${invalid.join(', ')}`;
+    return;
+  }
+  if (new Set(values).size < 2) {
+    errorEl.textContent = 'Please enter at least 2 different stations.';
+    return;
+  }
+
+  clearMap();
+
+  const result = findBestMeetup(values);
+  if (!result) {
+    errorEl.textContent = 'Could not find a reachable meeting point.';
+    return;
+  }
+
+  // Map
+  values.forEach((s, i) => addFriendMarker(s, i));
+  addMeetMarker(result.station);
+  drawLines(values, result.station);
+
+  const pts = [...values, result.station]
+    .filter(s => STATIONS[s])
+    .map(s => [STATIONS[s].lat, STATIONS[s].lng]);
+  if (pts.length > 0) map.fitBounds(pts, { padding: [40, 40] });
+
+  // Result panel
+  document.getElementById('resultStation').textContent = result.station;
+  document.getElementById('resultMeta').textContent =
+    `Max ${result.maxStops} stop${result.maxStops !== 1 ? 's' : ''} from any friend`;
+
+  const grid = document.getElementById('breakdownGrid');
+  grid.innerHTML = '';
+  const maxVal = Math.max(...result.stops);
+
+  values.forEach((s, i) => {
+    const c = FRIEND_COLORS[i];
+    const stops = result.stops[i];
+    const pct = maxVal > 0 ? Math.round((stops / maxVal) * 100) : 100;
+
+    const card = document.createElement('div');
+    card.className = 'breakdown-card';
+    card.style.setProperty('--card-color', c.bg);
+    card.querySelector || (card.innerHTML = '');
+    card.innerHTML = `
+      <div style="position:absolute;top:0;left:0;right:0;height:2px;background:${c.bg}"></div>
+      <div class="breakdown-friend">Friend ${i+1}</div>
+      <div class="breakdown-from">${s}</div>
+      <div class="breakdown-stops" style="color:${c.bg}">${stops}</div>
+      <div class="breakdown-label">stop${stops !== 1 ? 's' : ''}</div>
+      <div class="bar-wrap">
+        <div class="bar-fill" style="width:${pct}%;background:${c.bg}"></div>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+
+  const totalStops = result.stops.reduce((a,b)=>a+b,0);
+  const avg = (totalStops / result.stops.length).toFixed(1);
+  const stddev = Math.sqrt(result.variance).toFixed(1);
+
+  document.getElementById('scoreRow').innerHTML = `
+    <div class="score-item">
+      <div class="score-label">Max Stops</div>
+      <div class="score-value">${result.maxStops}</div>
+    </div>
+    <div class="score-item">
+      <div class="score-label">Total Stops</div>
+      <div class="score-value">${totalStops}</div>
+    </div>
+    <div class="score-item">
+      <div class="score-label">Avg Stops</div>
+      <div class="score-value">${avg}</div>
+    </div>
+    <div class="score-item">
+      <div class="score-label">Std Dev</div>
+      <div class="score-value">${stddev}</div>
+    </div>
+  `;
+
+  document.getElementById('resultPanel').classList.add('visible');
+}
+
+// Close dropdowns on outside click
+document.addEventListener('click', () => {
+  document.querySelectorAll('.autocomplete-list').forEach(l => l.classList.remove('open'));
+});
+</script>
+</body>
+</html>
