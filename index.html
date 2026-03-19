@@ -3,7 +3,21 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>MRT Meetup Finder</title>
+<title>MRT Meetup Finder — Find the Fairest Meeting Station in Singapore</title>
+<meta name="description" content="Find the fairest MRT meetup point in Singapore. Enter each friend's station and instantly discover the stop that minimises the longest journey for everyone." />
+<meta name="robots" content="index, follow" />
+<meta name="theme-color" content="#0d0f14" />
+
+<!-- Open Graph -->
+<meta property="og:type" content="website" />
+<meta property="og:title" content="MRT Meetup Finder — Find the Fairest Meeting Station in Singapore" />
+<meta property="og:description" content="Find the fairest MRT meetup point in Singapore. Enter each friend's station and instantly discover the stop that minimises the longest journey for everyone." />
+<meta property="og:site_name" content="MRT Meetup Finder" />
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:title" content="MRT Meetup Finder — Find the Fairest Meeting Station in Singapore" />
+<meta name="twitter:description" content="Find the fairest MRT meetup point in Singapore. Enter each friend's station and instantly discover the stop that minimises the longest journey for everyone." />
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:ital,wght@0,300;0,700;1,300&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script defer src="https://cloud.umami.is/script.js" data-website-id="50d00f96-b6e9-4ce4-ac09-fd7abcc00c24"></script>
@@ -393,6 +407,20 @@
     font-weight: 500;
   }
 
+  .github-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 0.9rem;
+    font-size: 0.7rem;
+    color: var(--muted);
+    text-decoration: none;
+    letter-spacing: 0.05em;
+    transition: color 0.2s;
+  }
+  .github-link:hover { color: var(--accent); }
+  .github-link svg { flex-shrink: 0; }
+
   .meet-marker {
     width: 36px;
     height: 36px;
@@ -407,11 +435,16 @@
 </style>
 </head>
 <body>
+<main>
 <div class="container">
   <header>
     <div class="eyebrow">Singapore MRT</div>
     <h1>Find the <em>fairest</em><br>meetup station.</h1>
     <p class="subtitle">Enter each friend's MRT station. We'll find the stop where no one travels more than necessary — minimizing the longest journey.</p>
+    <a class="github-link" href="https://github.com/charlesgohck/sg-mrt-meetup" target="_blank" rel="noopener noreferrer">
+      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0 1 12 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.63-5.37-12-12-12z"/></svg>
+      charlesgohck/sg-mrt-meetup
+    </a>
   </header>
 
   <div class="layout">
@@ -440,6 +473,26 @@
     </div>
   </div>
 </div>
+</main>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "MRT Meetup Finder",
+  "description": "Find the fairest MRT meetup point in Singapore. Enter each friend's station and instantly discover the stop that minimises the longest journey for everyone.",
+  "applicationCategory": "TravelApplication",
+  "operatingSystem": "Web",
+  "browserRequirements": "Requires JavaScript",
+  "audience": {
+    "@type": "Audience",
+    "geographicArea": {
+      "@type": "Country",
+      "name": "Singapore"
+    }
+  }
+}
+</script>
 
 <script>
 // ─── PALETTE ─────────────────────────────────────────────────────────────

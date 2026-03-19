@@ -17,20 +17,12 @@ cd mrt-meetup
 
 ### 2. Open locally
 
-No build step or dependencies required. Simply open `index.html` directly in your browser:
+No build step or dependencies required. Open `index.html` using the **Live Server** extension in Visual Studio Code:
 
-```bash
-open index.html          # macOS
-xdg-open index.html      # Linux
-start index.html         # Windows
-```
-
-Or serve it with any static file server, for example:
-
-```bash
-npx serve .
-# → http://localhost:3000
-```
+1. Install the [Live Server](https://marketplace.visualstudio.com/items?itemName=ritwickdey.LiveServer) extension in VS Code.
+2. Open the `mrt-meetup` folder in VS Code.
+3. Right-click `index.html` in the Explorer panel and select **"Open with Live Server"**.
+4. The app will open automatically at `http://127.0.0.1:5500`.
 
 ---
 
