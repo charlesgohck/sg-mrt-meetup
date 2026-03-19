@@ -7,17 +7,35 @@
 <meta name="description" content="Find the fairest MRT meetup point in Singapore. Enter each friend's station and instantly discover the stop that minimises the longest journey for everyone." />
 <meta name="robots" content="index, follow" />
 <meta name="theme-color" content="#0d0f14" />
+<meta name="author" content="charlesgohck" />
+<meta name="keywords" content="MRT meetup, Singapore MRT, fairest meeting point, MRT station finder, Singapore transport, meet in the middle MRT" />
+<link rel="canonical" href="https://faireststation.charlesgohck.com" />
 
 <!-- Open Graph -->
 <meta property="og:type" content="website" />
+<meta property="og:url" content="https://faireststation.charlesgohck.com" />
 <meta property="og:title" content="MRT Meetup Finder — Find the Fairest Meeting Station in Singapore" />
 <meta property="og:description" content="Find the fairest MRT meetup point in Singapore. Enter each friend's station and instantly discover the stop that minimises the longest journey for everyone." />
 <meta property="og:site_name" content="MRT Meetup Finder" />
+<meta property="og:image" content="https://faireststation.charlesgohck.comog-image.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content="MRT Meetup Finder — a map of Singapore's MRT network highlighting the fairest meeting station" />
+<meta property="og:locale" content="en_SG" />
 
 <!-- Twitter Card -->
-<meta name="twitter:card" content="summary" />
+<meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="MRT Meetup Finder — Find the Fairest Meeting Station in Singapore" />
 <meta name="twitter:description" content="Find the fairest MRT meetup point in Singapore. Enter each friend's station and instantly discover the stop that minimises the longest journey for everyone." />
+<meta name="twitter:image" content="https://faireststation.charlesgohck.comog-image.png" />
+<meta name="twitter:image:alt" content="MRT Meetup Finder — Singapore MRT network map" />
+
+<!-- Resource hints -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="dns-prefetch" href="https://unpkg.com" />
+<link rel="dns-prefetch" href="https://basemaps.cartocdn.com" />
+
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:ital,wght@0,300;0,700;1,300&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script defer src="https://cloud.umami.is/script.js" data-website-id="50d00f96-b6e9-4ce4-ac09-fd7abcc00c24"></script>
@@ -432,6 +450,108 @@
     justify-content: center;
     font-size: 14px;
   }
+
+  /* SEO content section */
+  .seo-section {
+    margin-top: 4rem;
+    padding-top: 3rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .seo-section h2 {
+    font-family: 'Fraunces', serif;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 1.25rem;
+  }
+
+  .seo-steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2.5rem;
+  }
+
+  .seo-step {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.1rem 1.2rem;
+  }
+
+  .seo-step-num {
+    font-size: 0.6rem;
+    letter-spacing: 0.15em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 0.4rem;
+  }
+
+  .seo-step p {
+    font-size: 0.78rem;
+    color: var(--muted);
+    line-height: 1.7;
+  }
+
+  .seo-step strong {
+    color: var(--text);
+    font-weight: 500;
+  }
+
+  .faq-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 2.5rem;
+  }
+
+  .faq-item {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem 1.2rem;
+  }
+
+  .faq-item h3 {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 0.45rem;
+    line-height: 1.5;
+  }
+
+  .faq-item p {
+    font-size: 0.75rem;
+    color: var(--muted);
+    line-height: 1.75;
+  }
+
+  /* Footer */
+  .site-footer {
+    margin-top: 3rem;
+    padding: 1.5rem 0 2rem;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  .site-footer p {
+    font-size: 0.68rem;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+
+  .site-footer a {
+    color: var(--muted);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+
+  .site-footer a:hover { color: var(--accent); }
 </style>
 </head>
 <body>
@@ -473,25 +593,144 @@
     </div>
   </div>
 </div>
+
+<!-- SEO content: crawlable description, how-it-works, FAQ -->
+<div class="container">
+  <section class="seo-section" aria-label="How it works">
+    <h2>How it works</h2>
+    <div class="seo-steps">
+      <div class="seo-step">
+        <div class="seo-step-num">Step 01</div>
+        <p><strong>Enter stations.</strong> Type each friend's nearest MRT station. Autocomplete covers every station across all six lines.</p>
+      </div>
+      <div class="seo-step">
+        <div class="seo-step-num">Step 02</div>
+        <p><strong>BFS pathfinding.</strong> A Breadth-First Search runs from every starting station simultaneously, counting stops across all interchange connections.</p>
+      </div>
+      <div class="seo-step">
+        <div class="seo-step-num">Step 03</div>
+        <p><strong>Minimax fairness.</strong> The algorithm finds the station where the <em>longest</em> journey is as short as possible — so no one person bears an unfair commute.</p>
+      </div>
+      <div class="seo-step">
+        <div class="seo-step-num">Step 04</div>
+        <p><strong>See it on the map.</strong> The recommended meetup station, each friend's origin, and dashed route lines are plotted on an interactive Singapore MRT map.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="seo-section" aria-label="Frequently asked questions">
+    <h2>Frequently asked questions</h2>
+    <div class="faq-list">
+      <div class="faq-item">
+        <h3>How does MRT Meetup Finder choose a station?</h3>
+        <p>It runs a Breadth-First Search from every friend's starting station across the full Singapore MRT graph. For each candidate station it finds the maximum number of stops any friend would travel, then picks the station with the lowest maximum — the minimax fairness criterion. Ties are broken by minimising the variance of all journey lengths.</p>
+      </div>
+      <div class="faq-item">
+        <h3>Which MRT lines are supported?</h3>
+        <p>All six lines currently in service: North-South Line (NS), East-West Line (EW), Circle Line (CC), North East Line (NE), Downtown Line (DT), and Thomson-East Coast Line (TE), including all interchange connections between them.</p>
+      </div>
+      <div class="faq-item">
+        <h3>Is MRT Meetup Finder free to use?</h3>
+        <p>Yes, completely free. No sign-up, no account and no data is stored — all calculations happen locally in your browser.</p>
+      </div>
+      <div class="faq-item">
+        <h3>How many friends can I add?</h3>
+        <p>Up to five friends. Enter each person's nearest MRT station and the app finds the single station that is fairest for the whole group.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer class="site-footer">
+    <p>
+      Built for Singapore commuters. Data reflects the MRT network as of 2024 including the Thomson-East Coast Line.<br />
+      Map tiles © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors, © <a href="https://carto.com/attributions" target="_blank" rel="noopener noreferrer">CARTO</a>.
+    </p>
+    <p>
+      <a href="https://github.com/charlesgohck/sg-mrt-meetup" target="_blank" rel="noopener noreferrer">Open source on GitHub</a>
+    </p>
+  </footer>
+</div>
+
 </main>
 
 <script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "WebApplication",
-  "name": "MRT Meetup Finder",
-  "description": "Find the fairest MRT meetup point in Singapore. Enter each friend's station and instantly discover the stop that minimises the longest journey for everyone.",
-  "applicationCategory": "TravelApplication",
-  "operatingSystem": "Web",
-  "browserRequirements": "Requires JavaScript",
-  "audience": {
-    "@type": "Audience",
-    "geographicArea": {
-      "@type": "Country",
-      "name": "Singapore"
+[
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "MRT Meetup Finder",
+    "url": "https://faireststation.charlesgohck.com",
+    "description": "Find the fairest MRT meetup point in Singapore. Enter each friend's station and instantly discover the stop that minimises the longest journey for everyone.",
+    "applicationCategory": "TravelApplication",
+    "operatingSystem": "Web",
+    "browserRequirements": "Requires JavaScript",
+    "isAccessibleForFree": true,
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "SGD"
+    },
+    "featureList": [
+      "BFS shortest-path algorithm across the full Singapore MRT network",
+      "Minimax fairness — minimises the longest journey of any participant",
+      "Interactive Leaflet map with route visualisation",
+      "Supports NS, EW, CC, NE, DT and TE lines",
+      "Works entirely in the browser — no account required"
+    ],
+    "author": {
+      "@type": "Person",
+      "name": "charlesgohck",
+      "url": "https://github.com/charlesgohck"
+    },
+    "datePublished": "2024-01-01",
+    "dateModified": "2026-03-19",
+    "audience": {
+      "@type": "Audience",
+      "geographicArea": {
+        "@type": "Country",
+        "name": "Singapore"
+      }
     }
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "How does MRT Meetup Finder choose a station?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "It runs a Breadth-First Search (BFS) from every friend's starting station across the full Singapore MRT graph. For each candidate meetup station it finds the maximum number of stops any single friend would travel, then picks the station with the lowest maximum — the minimax fairness criterion. Ties are broken by minimising the variance of all journey lengths."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Which MRT lines are supported?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "MRT Meetup Finder covers all six MRT lines currently in service: North-South Line (NS), East-West Line (EW), Circle Line (CC), North East Line (NE), Downtown Line (DT), and Thomson-East Coast Line (TE), including interchange connections between them."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Is MRT Meetup Finder free to use?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes, it is completely free. There is no sign-up, no account and no data stored — all calculations happen locally in your browser."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How many friends can I add?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "You can add up to five friends. Enter each person's nearest MRT station and the app will find the single station that is fairest for the whole group."
+        }
+      }
+    ]
   }
-}
+]
 </script>
 
 <script>
