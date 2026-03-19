@@ -552,6 +552,42 @@
   }
 
   .site-footer a:hover { color: var(--accent); }
+
+  /* ──── ENTRY ANIMATIONS ─────────────────────────────────────────────── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(18px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes slideInLeft {
+    from { opacity: 0; transform: translateX(-12px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    header .eyebrow      { animation: fadeUp 0.5s ease 0.05s both; }
+    header h1            { animation: fadeUp 0.55s ease 0.15s both; }
+    header .subtitle     { animation: fadeUp 0.5s ease 0.25s both; }
+    header .github-link  { animation: fadeUp 0.5s ease 0.35s both; }
+    .layout > .panel     { animation: fadeUp 0.55s ease 0.4s both; }
+    .layout > .right-panel { animation: fadeUp 0.55s ease 0.5s both; }
+    .result-panel.visible { animation: fadeUp 0.4s ease both; }
+    .anim-slide-in { animation: slideInLeft 0.3s ease both; }
+    .anim-fade-up  { animation: fadeUp 0.4s ease both; }
+    .reveal {
+      opacity: 0;
+      transform: translateY(16px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+    .reveal.is-visible { opacity: 1; transform: none; }
+    .seo-steps .reveal:nth-child(1) { transition-delay: 0s; }
+    .seo-steps .reveal:nth-child(2) { transition-delay: 0.1s; }
+    .seo-steps .reveal:nth-child(3) { transition-delay: 0.2s; }
+    .seo-steps .reveal:nth-child(4) { transition-delay: 0.3s; }
+    .faq-list .reveal:nth-child(1)  { transition-delay: 0s; }
+    .faq-list .reveal:nth-child(2)  { transition-delay: 0.1s; }
+    .faq-list .reveal:nth-child(3)  { transition-delay: 0.2s; }
+    .faq-list .reveal:nth-child(4)  { transition-delay: 0.3s; }
+  }
 </style>
 </head>
 <body>
@@ -597,21 +633,21 @@
 <!-- SEO content: crawlable description, how-it-works, FAQ -->
 <div class="container">
   <section class="seo-section" aria-label="How it works">
-    <h2>How it works</h2>
+    <h2 class="reveal">How it works</h2>
     <div class="seo-steps">
-      <div class="seo-step">
+      <div class="seo-step reveal">
         <div class="seo-step-num">Step 01</div>
         <p><strong>Enter stations.</strong> Type each friend's nearest MRT station. Autocomplete covers every station across all six lines.</p>
       </div>
-      <div class="seo-step">
+      <div class="seo-step reveal">
         <div class="seo-step-num">Step 02</div>
         <p><strong>BFS pathfinding.</strong> A Breadth-First Search runs from every starting station simultaneously, counting stops across all interchange connections.</p>
       </div>
-      <div class="seo-step">
+      <div class="seo-step reveal">
         <div class="seo-step-num">Step 03</div>
         <p><strong>Minimax fairness.</strong> The algorithm finds the station where the <em>longest</em> journey is as short as possible — so no one person bears an unfair commute.</p>
       </div>
-      <div class="seo-step">
+      <div class="seo-step reveal">
         <div class="seo-step-num">Step 04</div>
         <p><strong>See it on the map.</strong> The recommended meetup station, each friend's origin, and dashed route lines are plotted on an interactive Singapore MRT map.</p>
       </div>
@@ -619,28 +655,28 @@
   </section>
 
   <section class="seo-section" aria-label="Frequently asked questions">
-    <h2>Frequently asked questions</h2>
+    <h2 class="reveal">Frequently asked questions</h2>
     <div class="faq-list">
-      <div class="faq-item">
+      <div class="faq-item reveal">
         <h3>How does MRT Meetup Finder choose a station?</h3>
         <p>It runs a Breadth-First Search from every friend's starting station across the full Singapore MRT graph. For each candidate station it finds the maximum number of stops any friend would travel, then picks the station with the lowest maximum — the minimax fairness criterion. Ties are broken by minimising the variance of all journey lengths.</p>
       </div>
-      <div class="faq-item">
+      <div class="faq-item reveal">
         <h3>Which MRT lines are supported?</h3>
         <p>All six lines currently in service: North-South Line (NS), East-West Line (EW), Circle Line (CC), North East Line (NE), Downtown Line (DT), and Thomson-East Coast Line (TE), including all interchange connections between them.</p>
       </div>
-      <div class="faq-item">
+      <div class="faq-item reveal">
         <h3>Is MRT Meetup Finder free to use?</h3>
         <p>Yes, completely free. No sign-up, no account and no data is stored — all calculations happen locally in your browser.</p>
       </div>
-      <div class="faq-item">
+      <div class="faq-item reveal">
         <h3>How many friends can I add?</h3>
         <p>Up to five friends. Enter each person's nearest MRT station and the app finds the single station that is fairest for the whole group.</p>
       </div>
     </div>
   </section>
 
-  <footer class="site-footer">
+  <footer class="site-footer reveal">
     <p>
       Built for Singapore commuters. Data reflects the MRT network as of 2024 including the Thomson-East Coast Line.<br />
       Map tiles © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors, © <a href="https://carto.com/attributions" target="_blank" rel="noopener noreferrer">CARTO</a>.
@@ -1240,6 +1276,7 @@ function setupAutocomplete(input, listEl) {
 const MIN_FRIENDS = 2;
 const MAX_FRIENDS = 10;
 const friendInputs = [];
+let initialBuildDone = false;
 
 function renumberRows() {
   const rows = document.querySelectorAll('#friendsList .friend-row');
@@ -1303,6 +1340,7 @@ function addFriendRow() {
   row.appendChild(wrap);
   row.appendChild(removeBtn);
   list.appendChild(row);
+  if (initialBuildDone) row.classList.add('anim-slide-in');
 
   setupAutocomplete(input, dropdown);
   friendInputs.push(input);
@@ -1311,6 +1349,7 @@ function addFriendRow() {
 
 function buildFriendRows() {
   for (let i = 0; i < MIN_FRIENDS; i++) addFriendRow();
+  initialBuildDone = true;
 }
 
 buildFriendRows();
@@ -1368,7 +1407,8 @@ function findMeetup() {
     const pct = maxVal > 0 ? Math.round((stops / maxVal) * 100) : 100;
 
     const card = document.createElement('div');
-    card.className = 'breakdown-card';
+    card.className = 'breakdown-card anim-fade-up';
+    card.style.animationDelay = `${0.4 + i * 0.08}s`;
     card.style.setProperty('--card-color', c.bg);
     card.querySelector || (card.innerHTML = '');
     card.innerHTML = `
@@ -1407,8 +1447,22 @@ function findMeetup() {
     </div>
   `;
 
-  document.getElementById('resultPanel').classList.add('visible');
+  const panel = document.getElementById('resultPanel');
+  panel.classList.remove('visible');
+  void panel.offsetWidth;
+  panel.classList.add('visible');
 }
+
+// ─── SCROLL REVEAL ───────────────────────────────────────────────────────
+(function () {
+  if (!window.matchMedia('(prefers-reduced-motion: no-preference)').matches) return;
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) { e.target.classList.add('is-visible'); obs.unobserve(e.target); }
+    });
+  }, { threshold: 0.12 });
+  document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+})();
 
 // Close dropdowns on outside click
 document.addEventListener('click', () => {
